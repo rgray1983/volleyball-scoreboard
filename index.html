@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Volleyball Scoreboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Volleyball Scoreboard</p>
+        <h1 id="matchTitle">Game Night</h1>
+      </div>
+      <button class="icon-btn" id="settingsBtn" aria-label="Open settings">⚙️</button>
+    </header>
+
+    <main class="scoreboard" id="scoreboard">
+      <section class="team-card home" data-team="home">
+        <div class="team-topline">
+          <input id="homeName" class="team-name" value="Home" aria-label="Home team name" />
+          <button class="serve-btn active" id="homeServe" aria-label="Home serving">SERVE</button>
+        </div>
+        <button class="score-display" id="homeScore" aria-label="Add point to home">0</button>
+        <div class="score-actions">
+          <button class="action minus" id="homeMinus">−</button>
+          <button class="action plus" id="homePlus">+ Point</button>
+        </div>
+        <div class="meta-row">
+          <span>Sets Won</span>
+          <strong id="homeSets">0</strong>
+        </div>
+      </section>
+
+      <section class="center-panel">
+        <div class="set-pill">Set <strong id="setNumber">1</strong></div>
+        <div class="vs">VS</div>
+        <button class="swap-btn" id="swapServeBtn">Switch Serve</button>
+        <button class="win-btn" id="setWinnerBtn">Award Set Winner</button>
+      </section>
+
+      <section class="team-card away" data-team="away">
+        <div class="team-topline">
+          <input id="awayName" class="team-name" value="Away" aria-label="Away team name" />
+          <button class="serve-btn" id="awayServe" aria-label="Away serving">SERVE</button>
+        </div>
+        <button class="score-display" id="awayScore" aria-label="Add point to away">0</button>
+        <div class="score-actions">
+          <button class="action minus" id="awayMinus">−</button>
+          <button class="action plus" id="awayPlus">+ Point</button>
+        </div>
+        <div class="meta-row">
+          <span>Sets Won</span>
+          <strong id="awaySets">0</strong>
+        </div>
+      </section>
+    </main>
+
+    <section class="quick-panel">
+      <button id="undoBtn">Undo</button>
+      <button id="resetSetBtn">Reset Set</button>
+      <button id="newMatchBtn">New Match</button>
+      <button id="fullscreenBtn">Scoreboard Mode</button>
+    </section>
+
+    <section class="match-log">
+      <div class="section-title">
+        <h2>Match Log</h2>
+        <button id="clearLogBtn">Clear</button>
+      </div>
+      <ol id="logList"></ol>
+    </section>
+  </div>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" class="dialog-card">
+      <h2>Game Settings</h2>
+      <label>
+        Match Title
+        <input id="titleInput" value="Game Night" />
+      </label>
+      <label>
+        Points to Win Set
+        <input id="pointsToWin" type="number" min="1" value="25" />
+      </label>
+      <label>
+        Win By
+        <input id="winBy" type="number" min="1" value="2" />
+      </label>
+      <label>
+        Sets to Win Match
+        <input id="setsToWin" type="number" min="1" value="2" />
+      </label>
+      <div class="dialog-actions">
+        <button value="cancel" class="ghost">Cancel</button>
+        <button id="saveSettingsBtn" value="default">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
