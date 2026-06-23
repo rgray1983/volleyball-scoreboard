@@ -4,82 +4,111 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#070a12" />
-  <title>VolleyScore</title>
+  <title>Blazers Scoreboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="phone-app" id="app">
-    <header class="app-header">
-      <button class="small-btn" id="settingsBtn" type="button">⚙</button>
+  <div class="rotate-message">
+    <div class="rotate-card">
+      <div class="rotate-icon">↻</div>
+      <h2>Rotate Phone</h2>
+      <p>This scoreboard is made for landscape.</p>
+    </div>
+  </div>
+
+  <div class="app-shell" id="app">
+    <header class="top-bar">
+      <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings">⚙</button>
       <div class="title-wrap">
         <div class="kicker">VolleyScore</div>
         <h1 id="matchTitle">Game Night</h1>
       </div>
-      <button class="small-btn" id="fullscreenBtn" type="button">⛶</button>
+      <button class="icon-btn" id="fullscreenBtn" type="button" aria-label="Fullscreen">⛶</button>
     </header>
 
-    <main class="score-grid" aria-label="Volleyball scoreboard">
+    <main class="scoreboard" aria-label="Volleyball scoreboard">
       <section class="team-panel home" data-team="home">
         <div class="team-head">
-          <label class="logo-picker" title="Choose home logo">
+          <label class="logo-picker" title="Choose Blazers logo">
             <input id="homeLogoInput" type="file" accept="image/*" />
             <img id="homeLogo" alt="" />
-            <span id="homeInitial">H</span>
+            <span id="homeInitial">B</span>
           </label>
-          <input id="homeName" class="team-name" value="Hartsville" aria-label="Home team name" />
+          <input id="homeName" class="team-name" value="Blazers" aria-label="Home team name" />
         </div>
-        <button id="homeScoreBtn" class="score-btn" type="button" aria-label="Add point to home">0</button>
-        <button id="homePlus" class="point-btn plus" type="button">+1</button>
-        <button id="homeMinus" class="point-btn minus" type="button">−1</button>
-        <button id="homeServe" class="serve-chip active" type="button">● Serving</button>
-        <div class="sets">Sets <strong id="homeSets">0</strong></div>
+
+        <button id="homeScoreBtn" class="score-btn" type="button" aria-label="Add point to Blazers">0</button>
+
+        <div class="point-actions">
+          <button id="homePlus" class="point-btn plus" type="button">+1</button>
+          <button id="homeMinus" class="point-btn minus" type="button">−1</button>
+        </div>
+
+        <div class="sets-card">
+          <span>Sets Won</span>
+          <strong id="homeSets">0</strong>
+          <div class="set-dots" id="homeSetDots"></div>
+        </div>
+      </section>
+
+      <section class="center-panel">
+        <div class="match-pill">Best 2 of 3</div>
+        <div class="alert-banner" id="alertBanner">Race to 25</div>
+        <div class="set-box">
+          <span>Set</span>
+          <strong id="setNumber">1</strong>
+        </div>
+        <div class="race-box">
+          <span>Race To</span>
+          <strong id="raceTo">25</strong>
+        </div>
+        <div class="control-grid">
+          <button id="undoBtn" type="button">Undo</button>
+          <button id="newSetBtn" type="button">New Set</button>
+          <button id="newMatchBtn" type="button">New Match</button>
+        </div>
       </section>
 
       <section class="team-panel away" data-team="away">
         <div class="team-head">
-          <label class="logo-picker" title="Choose away logo">
+          <label class="logo-picker" title="Choose visitor logo">
             <input id="awayLogoInput" type="file" accept="image/*" />
             <img id="awayLogo" alt="" />
             <span id="awayInitial">V</span>
           </label>
-          <input id="awayName" class="team-name" value="Visitor" aria-label="Away team name" />
+          <input id="awayName" class="team-name" value="Visitor" aria-label="Visitor team name" />
         </div>
-        <button id="awayScoreBtn" class="score-btn" type="button" aria-label="Add point to visitor">0</button>
-        <button id="awayPlus" class="point-btn plus" type="button">+1</button>
-        <button id="awayMinus" class="point-btn minus" type="button">−1</button>
-        <button id="awayServe" class="serve-chip" type="button">Serve</button>
-        <div class="sets">Sets <strong id="awaySets">0</strong></div>
+
+        <button id="awayScoreBtn" class="score-btn" type="button" aria-label="Add point to Visitor">0</button>
+
+        <div class="point-actions">
+          <button id="awayPlus" class="point-btn plus" type="button">+1</button>
+          <button id="awayMinus" class="point-btn minus" type="button">−1</button>
+        </div>
+
+        <div class="sets-card">
+          <span>Sets Won</span>
+          <strong id="awaySets">0</strong>
+          <div class="set-dots" id="awaySetDots"></div>
+        </div>
       </section>
     </main>
-
-    <section class="status-strip" id="statusStrip">
-      <div>
-        <span class="label">Set</span>
-        <strong id="setNumber">1</strong>
-      </div>
-      <div>
-        <span class="label">Server</span>
-        <strong id="serverName">Hartsville</strong>
-      </div>
-      <div>
-        <span class="label">Race to</span>
-        <strong id="raceTo">25</strong>
-      </div>
-    </section>
-
-    <section class="bottom-actions">
-      <button id="undoBtn" type="button">Undo</button>
-      <button id="swapServeBtn" type="button">Switch Serve</button>
-      <button id="newSetBtn" type="button">New Set</button>
-      <button id="newMatchBtn" type="button">New Match</button>
-    </section>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <canvas id="confettiCanvas"></canvas>
+
+  <div class="winner-overlay" id="winnerOverlay" role="button" tabindex="0" aria-label="Tap to close celebration">
+    <div class="winner-shade"></div>
+    <div class="winner-content">
+      <div class="winner-trophy" aria-hidden="true">🏆</div>
+      <h2 id="winnerText">Blazers Win!</h2>
+      <p>Tap anywhere to close</p>
+    </div>
+  </div>
 
   <dialog id="settingsDialog">
     <form method="dialog" class="settings-card">
@@ -95,31 +124,26 @@
 
       <div class="two-col">
         <label>
-          Home color
-          <input id="homeColor" type="color" value="#21d4fd" />
+          Home team
+          <input id="homeNameSetting" value="Blazers" />
         </label>
         <label>
-          Away color
-          <input id="awayColor" type="color" value="#ff4ecd" />
+          Visitor team
+          <input id="awayNameSetting" value="Visitor" />
         </label>
       </div>
 
-      <div class="three-col">
-        <label>
-          Points
-          <input id="pointsToWin" type="number" min="1" value="25" />
-        </label>
-        <label>
-          Win by
-          <input id="winBy" type="number" min="1" value="2" />
-        </label>
-        <label>
-          Match sets
-          <input id="setsToWin" type="number" min="1" value="2" />
-        </label>
+      <div class="swatch-section">
+        <h3>Blazers Color</h3>
+        <div class="swatches" id="homeSwatches"></div>
       </div>
 
-      <p class="hint">Tap a team logo circle to add a logo. Use the ⛶ button for fullscreen.</p>
+      <div class="swatch-section">
+        <h3>Visitor Color</h3>
+        <div class="swatches" id="awaySwatches"></div>
+      </div>
+
+      <p class="hint">Best 2 out of 3. Sets 1–2 race to 25. Set 3 races to 15. Win by 2.</p>
 
       <div class="dialog-actions">
         <button id="saveSettingsBtn" value="default" type="submit">Save Setup</button>
