@@ -1,3 +1,20 @@
+import { firebaseConfig } from "./firebase-config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  onSnapshot,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const params = new URLSearchParams(window.location.search);
+const GAME_ID_FROM_URL = params.get("game");
+const MODE_FROM_URL = params.get("mode") || "scorer";
+const isViewer = MODE_FROM_URL === "view";
+
 const state = {
   homeScore: 0,
   awayScore: 0,
@@ -10,6 +27,10 @@ const state = {
   lastAlert: "",
   homeColor: "#d62828",
   awayColor: "#1565c0",
+  matchTitle: "Game Night",
+  homeName: "Team 1",
+  awayName: "Team 2",
+  winner: "",
   confettiRunning: false,
   confettiAnimation: null
 };
@@ -29,7 +50,9 @@ const COLORS = [
 
 const $ = (id) => document.getElementById(id);
 const els = {
+  app: $("app"),
   matchTitle: $("matchTitle"),
+  liveStatus: $("liveStatus"),
   titleInput: $("titleInput"),
   homeName: $("homeName"),
   awayName: $("awayName"),
@@ -45,6 +68,7 @@ const els = {
   raceTo: $("raceTo"),
   alertBanner: $("alertBanner"),
   settingsDialog: $("settingsDialog"),
+  shareDialog: $("shareDialog"),
   toast: $("toast"),
   homeLogoInput: $("homeLogoInput"),
   awayLogoInput: $("awayLogoInput"),
@@ -55,11 +79,162 @@ const els = {
   homeSwatches: $("homeSwatches"),
   awaySwatches: $("awaySwatches"),
   winnerOverlay: $("winnerOverlay"),
-  winnerText: $("winnerText")
+  winnerText: $("winnerText"),
+  viewerLink: $("viewerLink"),
+  firebaseNote: $("firebaseNote")
 };
 
+let db = null;
+let liveGameId = GAME_ID_FROM_URL || "";
+let unsubscribeLive = null;
+let applyingRemote = false;
+let liveReady = false;
+let remoteTimer = null;
+
+function hasFirebaseConfig() {
+  return Boolean(firebaseConfig?.apiKey && firebaseConfig?.projectId && firebaseConfig?.appId);
+}
+
+function initFirebase() {
+  if (!hasFirebaseConfig()) return false;
+  try {
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+function publicState() {
+  return {
+    homeScore: state.homeScore,
+    awayScore: state.awayScore,
+    homeSets: state.homeSets,
+    awaySets: state.awaySets,
+    setNumber: state.setNumber,
+    winBy: state.winBy,
+    setsToWin: state.setsToWin,
+    lastAlert: state.lastAlert,
+    homeColor: state.homeColor,
+    awayColor: state.awayColor,
+    matchTitle: state.matchTitle,
+    homeName: state.homeName,
+    awayName: state.awayName,
+    winner: state.winner
+  };
+}
+
+function applyState(next) {
+  Object.assign(state, {
+    homeScore: Number(next.homeScore ?? 0),
+    awayScore: Number(next.awayScore ?? 0),
+    homeSets: Number(next.homeSets ?? 0),
+    awaySets: Number(next.awaySets ?? 0),
+    setNumber: Number(next.setNumber ?? 1),
+    winBy: Number(next.winBy ?? 2),
+    setsToWin: Number(next.setsToWin ?? 2),
+    lastAlert: next.lastAlert ?? "",
+    homeColor: next.homeColor || "#d62828",
+    awayColor: next.awayColor || "#1565c0",
+    matchTitle: next.matchTitle || "Game Night",
+    homeName: next.homeName || "Team 1",
+    awayName: next.awayName || "Team 2",
+    winner: next.winner || ""
+  });
+  setTeamColor("home", state.homeColor, false);
+  setTeamColor("away", state.awayColor, false);
+  render();
+  if (state.winner) showWinner(state.winner, false);
+  else hideWinner();
+}
+
+function liveDocRef() {
+  return doc(db, "volleyballGames", liveGameId);
+}
+
+function buildViewerLink(gameId = liveGameId) {
+  const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+  return `${cleanUrl}?game=${encodeURIComponent(gameId)}&mode=view`;
+}
+
+function buildScorerLink(gameId = liveGameId) {
+  const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+  return `${cleanUrl}?game=${encodeURIComponent(gameId)}&mode=scorer`;
+}
+
+async function createLiveGame() {
+  if (!db) {
+    els.firebaseNote.textContent = "Live sharing needs Firebase connected first. Fill in firebase-config.js, then push again.";
+    toast("Firebase config needed", true);
+    return;
+  }
+
+  if (!liveGameId) {
+    liveGameId = `game-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  }
+
+  await setDoc(liveDocRef(), {
+    ...publicState(),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+
+  els.viewerLink.value = buildViewerLink();
+  els.firebaseNote.textContent = "Live game created. Share the viewer link with family.";
+  window.history.replaceState({}, "", buildScorerLink());
+  startLiveListener();
+  toast("Live game created");
+}
+
+function queueRemoteUpdate() {
+  if (!db || !liveGameId || isViewer || applyingRemote || !liveReady) return;
+  clearTimeout(remoteTimer);
+  remoteTimer = setTimeout(async () => {
+    try {
+      await updateDoc(liveDocRef(), {
+        ...publicState(),
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error(error);
+      toast("Live update failed", true);
+    }
+  }, 180);
+}
+
+async function startLiveListener() {
+  if (!db || !liveGameId) return;
+  unsubscribeLive?.();
+  const ref = liveDocRef();
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    if (isViewer) {
+      els.liveStatus.textContent = "Game not found";
+      toast("Game link not found", true);
+      return;
+    }
+    await setDoc(ref, { ...publicState(), createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  }
+  els.viewerLink.value = buildViewerLink();
+  liveReady = true;
+  els.liveStatus.textContent = isViewer ? "Live Viewer Mode" : "Live Scorer Mode";
+  document.body.classList.toggle("viewer-mode", isViewer);
+
+  unsubscribeLive = onSnapshot(ref, (documentSnap) => {
+    if (!documentSnap.exists()) return;
+    applyingRemote = true;
+    applyState(documentSnap.data());
+    applyingRemote = false;
+  }, (error) => {
+    console.error(error);
+    els.liveStatus.textContent = "Live connection error";
+  });
+}
+
 function teamName(team) {
-  return (team === "home" ? els.homeName.value : els.awayName.value).trim() || (team === "home" ? "Blazers" : "Visitor");
+  return (team === "home" ? state.homeName : state.awayName).trim() || (team === "home" ? "Team 1" : "Team 2");
 }
 
 function otherTeam(team) {
@@ -71,14 +246,7 @@ function pointsToWinForCurrentSet() {
 }
 
 function snapshot() {
-  state.history.push(JSON.stringify({
-    homeScore: state.homeScore,
-    awayScore: state.awayScore,
-    homeSets: state.homeSets,
-    awaySets: state.awaySets,
-    setNumber: state.setNumber,
-    lastAlert: state.lastAlert
-  }));
+  state.history.push(JSON.stringify(publicState()));
   if (state.history.length > 80) state.history.shift();
 }
 
@@ -101,6 +269,12 @@ function renderSetDots(container, won) {
 
 function render() {
   const target = pointsToWinForCurrentSet();
+  els.matchTitle.textContent = state.matchTitle;
+  els.titleInput.value = state.matchTitle;
+  els.homeName.value = state.homeName;
+  els.awayName.value = state.awayName;
+  els.homeNameSetting.value = state.homeName;
+  els.awayNameSetting.value = state.awayName;
   els.homeScoreBtn.textContent = state.homeScore;
   els.awayScoreBtn.textContent = state.awayScore;
   els.homeSets.textContent = state.homeSets;
@@ -109,7 +283,6 @@ function render() {
   els.raceTo.textContent = target;
   els.homeInitial.textContent = teamName("home").charAt(0).toUpperCase();
   els.awayInitial.textContent = teamName("away").charAt(0).toUpperCase();
-
   renderSetDots(els.homeSetDots, state.homeSets);
   renderSetDots(els.awaySetDots, state.awaySets);
   updateAlertBanner();
@@ -130,13 +303,8 @@ function updateAlertBanner() {
   }
 }
 
-function scoreOf(team) {
-  return state[`${team}Score`];
-}
-
-function setScore(team, value) {
-  state[`${team}Score`] = Math.max(0, value);
-}
+function scoreOf(team) { return state[`${team}Score`]; }
+function setScore(team, value) { state[`${team}Score`] = Math.max(0, value); }
 
 function hasWonSet(team) {
   const target = pointsToWinForCurrentSet();
@@ -154,19 +322,23 @@ function isPointOpportunity(team) {
 }
 
 function point(team) {
+  if (isViewer) return;
   if (state.homeSets >= state.setsToWin || state.awaySets >= state.setsToWin) return;
   snapshot();
   setScore(team, scoreOf(team) + 1);
   render();
   checkMilestones(team);
+  queueRemoteUpdate();
 }
 
 function subtract(team) {
-  if (scoreOf(team) <= 0) return;
+  if (isViewer || scoreOf(team) <= 0) return;
   snapshot();
   setScore(team, scoreOf(team) - 1);
   state.lastAlert = "";
+  state.winner = "";
   render();
+  queueRemoteUpdate();
 }
 
 function checkMilestones(team) {
@@ -192,22 +364,28 @@ function winSet(team) {
   render();
 
   if (wonMatch) {
-    showWinner(team);
+    state.winner = team;
+    showWinner(team, true);
+    queueRemoteUpdate();
     return;
   }
 
   toast(`${teamName(team)} wins Set ${state.setNumber}!`, true);
   startTimedConfetti(1600);
+  queueRemoteUpdate();
   setTimeout(() => {
+    if (state.winner) return;
     state.setNumber += 1;
     state.homeScore = 0;
     state.awayScore = 0;
     state.lastAlert = "";
     render();
+    queueRemoteUpdate();
   }, 1100);
 }
 
 function newSet() {
+  if (isViewer) return;
   if (state.setNumber >= 3) {
     toast("Best 2 of 3 only has three sets", true);
     return;
@@ -217,11 +395,14 @@ function newSet() {
   state.awayScore = 0;
   state.setNumber += 1;
   state.lastAlert = "";
+  state.winner = "";
   render();
+  queueRemoteUpdate();
   toast(`Set ${state.setNumber} ready`);
 }
 
 function newMatch() {
+  if (isViewer) return;
   const ok = confirm("Start a new match? This clears scores and sets.");
   if (!ok) return;
   snapshot();
@@ -231,42 +412,66 @@ function newMatch() {
   state.awaySets = 0;
   state.setNumber = 1;
   state.lastAlert = "";
+  state.winner = "";
   stopConfetti();
   hideWinner();
   render();
+  queueRemoteUpdate();
   toast("New match ready");
 }
 
 function undo() {
+  if (isViewer) return;
   const previous = state.history.pop();
   if (!previous) {
     toast("Nothing to undo");
     return;
   }
-  Object.assign(state, JSON.parse(previous));
+  applyState(JSON.parse(previous));
   stopConfetti();
   hideWinner();
-  render();
+  queueRemoteUpdate();
   toast("Undone");
 }
 
 function saveSettings() {
-  els.matchTitle.textContent = els.titleInput.value.trim() || "Game Night";
-  els.homeName.value = els.homeNameSetting.value.trim() || "Blazers";
-  els.awayName.value = els.awayNameSetting.value.trim() || "Visitor";
+  if (isViewer) return;
+  state.matchTitle = els.titleInput.value.trim() || "Game Night";
+  state.homeName = els.homeNameSetting.value.trim() || "Team 1";
+  state.awayName = els.awayNameSetting.value.trim() || "Team 2";
   state.lastAlert = "";
   render();
+  queueRemoteUpdate();
   toast("Setup saved");
 }
 
 function openSettings() {
-  els.titleInput.value = els.matchTitle.textContent;
-  els.homeNameSetting.value = els.homeName.value;
-  els.awayNameSetting.value = els.awayName.value;
+  if (isViewer) return;
+  els.titleInput.value = state.matchTitle;
+  els.homeNameSetting.value = state.homeName;
+  els.awayNameSetting.value = state.awayName;
   els.settingsDialog.showModal();
 }
 
+function openShare() {
+  els.viewerLink.value = liveGameId ? buildViewerLink() : "";
+  els.firebaseNote.textContent = hasFirebaseConfig()
+    ? (liveGameId ? "This is your read-only viewer link." : "Create a live game to get a viewer link.")
+    : "Live sharing needs Firebase connected first. Fill in firebase-config.js.";
+  els.shareDialog.showModal();
+}
+
+async function copyViewerLink() {
+  if (!els.viewerLink.value) {
+    toast("Create a live game first", true);
+    return;
+  }
+  await navigator.clipboard.writeText(els.viewerLink.value);
+  toast("Viewer link copied");
+}
+
 function handleLogo(input, img, picker) {
+  if (isViewer) return;
   const file = input.files?.[0];
   if (!file) return;
   const reader = new FileReader();
@@ -307,12 +512,14 @@ function buildSwatches(container, team) {
   });
 }
 
-function setTeamColor(team, value) {
+function setTeamColor(team, value, shouldSync = true) {
+  if (isViewer && shouldSync) return;
   state[`${team}Color`] = value;
   document.documentElement.style.setProperty(team === "home" ? "--home" : "--away", value);
   document.querySelectorAll(`#${team}Swatches .swatch`).forEach((swatch) => {
     swatch.classList.toggle("selected", swatch.dataset.value.toLowerCase() === value.toLowerCase());
   });
+  if (shouldSync) queueRemoteUpdate();
 }
 
 function resizeCanvas(canvas, ctx) {
@@ -326,7 +533,6 @@ function startConfetti() {
   const canvas = $("confettiCanvas");
   const ctx = canvas.getContext("2d");
   resizeCanvas(canvas, ctx);
-
   const colors = [state.homeColor, state.awayColor, "#ffd166", "#ffffff", "#ff3b30"];
   const pieces = Array.from({ length: 140 }, () => ({
     x: Math.random() * window.innerWidth,
@@ -337,10 +543,8 @@ function startConfetti() {
     spin: Math.random() * Math.PI,
     color: colors[Math.floor(Math.random() * colors.length)]
   }));
-
   state.confettiRunning = true;
   cancelAnimationFrame(state.confettiAnimation);
-
   function draw() {
     if (!state.confettiRunning) {
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -383,11 +587,12 @@ function startTimedConfetti(ms) {
   startTimedConfetti.timer = setTimeout(stopConfetti, ms);
 }
 
-function showWinner(team) {
+function showWinner(team, sync = false) {
   els.winnerText.textContent = `${teamName(team)} Wins!`;
   document.body.classList.add("celebrating");
   els.winnerOverlay.classList.add("show");
   startConfetti();
+  if (sync) queueRemoteUpdate();
 }
 
 function hideWinner() {
@@ -400,32 +605,69 @@ function closeWinner() {
   stopConfetti();
 }
 
-$("homePlus").addEventListener("click", () => point("home"));
-$("awayPlus").addEventListener("click", () => point("away"));
-$("homeScoreBtn").addEventListener("click", () => point("home"));
-$("awayScoreBtn").addEventListener("click", () => point("away"));
-$("homeMinus").addEventListener("click", () => subtract("home"));
-$("awayMinus").addEventListener("click", () => subtract("away"));
-$("undoBtn").addEventListener("click", undo);
-$("newSetBtn").addEventListener("click", newSet);
-$("newMatchBtn").addEventListener("click", newMatch);
-$("settingsBtn").addEventListener("click", openSettings);
-$("fullscreenBtn").addEventListener("click", toggleFullscreen);
-$("saveSettingsBtn").addEventListener("click", saveSettings);
-els.homeLogoInput.addEventListener("change", () => handleLogo(els.homeLogoInput, els.homeLogo, els.homeLogoInput.closest(".logo-picker")));
-els.awayLogoInput.addEventListener("change", () => handleLogo(els.awayLogoInput, els.awayLogo, els.awayLogoInput.closest(".logo-picker")));
-els.homeName.addEventListener("input", render);
-els.awayName.addEventListener("input", render);
-els.winnerOverlay.addEventListener("click", closeWinner);
-els.winnerOverlay.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" || event.key === " ") closeWinner();
-});
-window.addEventListener("resize", () => {
-  if (state.confettiRunning) startConfetti();
-});
+function updateNameFromInline(team) {
+  if (isViewer) return;
+  state[`${team}Name`] = (team === "home" ? els.homeName.value : els.awayName.value).trim() || (team === "home" ? "Team 1" : "Team 2");
+  state.lastAlert = "";
+  render();
+  queueRemoteUpdate();
+}
 
-buildSwatches(els.homeSwatches, "home");
-buildSwatches(els.awaySwatches, "away");
-setTeamColor("home", state.homeColor);
-setTeamColor("away", state.awayColor);
-render();
+function wireEvents() {
+  $("homePlus").addEventListener("click", () => point("home"));
+  $("awayPlus").addEventListener("click", () => point("away"));
+  $("homeScoreBtn").addEventListener("click", () => point("home"));
+  $("awayScoreBtn").addEventListener("click", () => point("away"));
+  $("homeMinus").addEventListener("click", () => subtract("home"));
+  $("awayMinus").addEventListener("click", () => subtract("away"));
+  $("undoBtn").addEventListener("click", undo);
+  $("newSetBtn").addEventListener("click", newSet);
+  $("newMatchBtn").addEventListener("click", newMatch);
+  $("shareBtn").addEventListener("click", openShare);
+  $("settingsBtn").addEventListener("click", openSettings);
+  $("fullscreenBtn").addEventListener("click", toggleFullscreen);
+  $("saveSettingsBtn").addEventListener("click", saveSettings);
+  $("createLiveBtn").addEventListener("click", createLiveGame);
+  $("copyLinkBtn").addEventListener("click", copyViewerLink);
+  els.homeLogoInput.addEventListener("change", () => handleLogo(els.homeLogoInput, els.homeLogo, els.homeLogoInput.closest(".logo-picker")));
+  els.awayLogoInput.addEventListener("change", () => handleLogo(els.awayLogoInput, els.awayLogo, els.awayLogoInput.closest(".logo-picker")));
+  els.homeName.addEventListener("change", () => updateNameFromInline("home"));
+  els.awayName.addEventListener("change", () => updateNameFromInline("away"));
+  els.winnerOverlay.addEventListener("click", closeWinner);
+  els.winnerOverlay.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") closeWinner();
+  });
+  window.addEventListener("resize", () => {
+    if (state.confettiRunning) startConfetti();
+  });
+}
+
+function applyViewerMode() {
+  if (!isViewer) return;
+  document.body.classList.add("viewer-mode");
+  document.querySelectorAll("button, input").forEach((el) => {
+    if (el.id === "fullscreenBtn") return;
+    el.disabled = true;
+  });
+  els.settingsDialog?.close?.();
+  els.shareDialog?.close?.();
+}
+
+async function boot() {
+  buildSwatches(els.homeSwatches, "home");
+  buildSwatches(els.awaySwatches, "away");
+  wireEvents();
+  setTeamColor("home", state.homeColor, false);
+  setTeamColor("away", state.awayColor, false);
+  render();
+
+  if (initFirebase()) {
+    els.liveStatus.textContent = liveGameId ? "Connecting Live Game..." : "Offline Practice Mode";
+    if (liveGameId) await startLiveListener();
+  } else {
+    els.liveStatus.textContent = "Offline Practice Mode";
+  }
+  applyViewerMode();
+}
+
+boot();

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#070a12" />
-  <title>Blazers Scoreboard</title>
+  <title>VolleyScore Live</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@500;700;800;900&display=swap" rel="stylesheet">
@@ -25,6 +25,7 @@
       <div class="title-wrap">
         <div class="kicker">VolleyScore</div>
         <h1 id="matchTitle">Game Night</h1>
+        <div class="live-status" id="liveStatus">Offline Practice Mode</div>
       </div>
       <button class="icon-btn" id="fullscreenBtn" type="button" aria-label="Fullscreen">⛶</button>
     </header>
@@ -32,15 +33,15 @@
     <main class="scoreboard" aria-label="Volleyball scoreboard">
       <section class="team-panel home" data-team="home">
         <div class="team-head">
-          <label class="logo-picker" title="Choose Blazers logo">
+          <label class="logo-picker" title="Choose Team 1 logo">
             <input id="homeLogoInput" type="file" accept="image/*" />
             <img id="homeLogo" alt="" />
-            <span id="homeInitial">B</span>
+            <span id="homeInitial">T</span>
           </label>
-          <input id="homeName" class="team-name" value="Blazers" aria-label="Home team name" />
+          <input id="homeName" class="team-name" value="Team 1" aria-label="Team 1 name" />
         </div>
 
-        <button id="homeScoreBtn" class="score-btn" type="button" aria-label="Add point to Blazers">0</button>
+        <button id="homeScoreBtn" class="score-btn" type="button" aria-label="Add point to Team 1">0</button>
 
         <div class="point-actions">
           <button id="homePlus" class="point-btn plus" type="button">+1</button>
@@ -69,6 +70,7 @@
           <button id="undoBtn" type="button">Undo</button>
           <button id="newSetBtn" type="button">New Set</button>
           <button id="newMatchBtn" type="button">New Match</button>
+          <button id="shareBtn" type="button">Share</button>
         </div>
       </section>
 
@@ -79,7 +81,7 @@
             <img id="awayLogo" alt="" />
             <span id="awayInitial">V</span>
           </label>
-          <input id="awayName" class="team-name" value="Visitor" aria-label="Visitor team name" />
+          <input id="awayName" class="team-name" value="Team 2" aria-label="Team 2 name" />
         </div>
 
         <button id="awayScoreBtn" class="score-btn" type="button" aria-label="Add point to Visitor">0</button>
@@ -99,6 +101,25 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="shareDialog">
+    <form method="dialog" class="settings-card share-card">
+      <div class="settings-head">
+        <h2>Live Share</h2>
+        <button value="cancel" type="submit" class="x-btn">×</button>
+      </div>
+      <p class="hint">Create a live game, then send the viewer link to family. They can follow the score in real time, but cannot edit it.</p>
+      <label>
+        Viewer link
+        <input id="viewerLink" readonly placeholder="Create a live game first" />
+      </label>
+      <div class="dialog-actions share-actions">
+        <button id="createLiveBtn" value="default" type="button">Create Live Game</button>
+        <button id="copyLinkBtn" value="default" type="button">Copy Viewer Link</button>
+      </div>
+      <p class="firebase-note" id="firebaseNote"></p>
+    </form>
+  </dialog>
   <canvas id="confettiCanvas"></canvas>
 
   <div class="winner-overlay" id="winnerOverlay" role="button" tabindex="0" aria-label="Tap to close celebration">
@@ -125,16 +146,16 @@
       <div class="two-col">
         <label>
           Home team
-          <input id="homeNameSetting" value="Blazers" />
+          <input id="homeNameSetting" value="Team 1" />
         </label>
         <label>
           Visitor team
-          <input id="awayNameSetting" value="Visitor" />
+          <input id="awayNameSetting" value="Team 2" />
         </label>
       </div>
 
       <div class="swatch-section">
-        <h3>Blazers Color</h3>
+        <h3>Team 1 Color</h3>
         <div class="swatches" id="homeSwatches"></div>
       </div>
 
@@ -151,6 +172,6 @@
     </form>
   </dialog>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
