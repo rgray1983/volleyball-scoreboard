@@ -5,7 +5,6 @@ import {
   doc,
   getDoc,
   setDoc,
-  updateDoc,
   onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -178,30 +177,40 @@ async function createLiveGame() {
   await setDoc(liveDocRef(), {
     ...publicState(),
     createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
+    updatedAt: serverTimestamp(),
+    updatedAtMs: Date.now()
   }, { merge: true });
 
   els.viewerLink.value = buildViewerLink();
   els.firebaseNote.textContent = "Live game created. Share the viewer link with family.";
   window.history.replaceState({}, "", buildScorerLink());
-  startLiveListener();
+  await startLiveListener();
   toast("Live game created");
 }
 
 function queueRemoteUpdate() {
-  if (!db || !liveGameId || isViewer || applyingRemote || !liveReady) return;
+  // Push every scorer change to Firestore. Use setDoc(..., merge:true) instead
+  // of updateDoc so a live game can recover even if the document was not fully ready yet.
+  if (!db || !liveGameId || isViewer || applyingRemote) return;
   clearTimeout(remoteTimer);
-  remoteTimer = setTimeout(async () => {
-    try {
-      await updateDoc(liveDocRef(), {
-        ...publicState(),
-        updatedAt: serverTimestamp()
-      });
-    } catch (error) {
-      console.error(error);
-      toast("Live update failed", true);
-    }
-  }, 180);
+  remoteTimer = setTimeout(pushRemoteUpdate, 120);
+}
+
+async function pushRemoteUpdate() {
+  if (!db || !liveGameId || isViewer || applyingRemote) return;
+  try {
+    await setDoc(liveDocRef(), {
+      ...publicState(),
+      updatedAt: serverTimestamp(),
+      updatedAtMs: Date.now()
+    }, { merge: true });
+    liveReady = true;
+    els.liveStatus.textContent = "Live Scorer Mode · Synced";
+  } catch (error) {
+    console.error(error);
+    els.liveStatus.textContent = "Live sync failed";
+    toast("Live update failed", true);
+  }
 }
 
 async function startLiveListener() {
@@ -227,9 +236,12 @@ async function startLiveListener() {
     applyingRemote = true;
     applyState(documentSnap.data());
     applyingRemote = false;
+    liveReady = true;
+    els.liveStatus.textContent = isViewer ? "Live Viewer Mode · Updated" : "Live Scorer Mode · Connected";
   }, (error) => {
     console.error(error);
     els.liveStatus.textContent = "Live connection error";
+    toast("Live connection error", true);
   });
 }
 
