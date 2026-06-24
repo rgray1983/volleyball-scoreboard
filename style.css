@@ -162,6 +162,38 @@ h1 {
   line-height: 0.9;
   text-shadow: 0 7px 22px rgba(0,0,0,0.5);
 }
+
+.score-wrap {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+}
+
+.set-win-badge {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%) scale(0.4) rotate(-6deg);
+  z-index: 8;
+  opacity: 0;
+  pointer-events: none;
+  color: var(--gold);
+  font-family: Inter, system-ui, sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: clamp(1.8rem, 11dvh, 4.7rem);
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  text-shadow:
+    0 3px 0 rgba(0,0,0,0.75),
+    0 0 18px rgba(255,209,102,0.95),
+    0 0 44px rgba(255,209,102,0.55);
+  white-space: nowrap;
+}
+
+.set-win-badge.show {
+  animation: setWinnerPulse 3s ease-in-out both;
+}
 .score-btn:active, .point-btn:active, .control-grid button:active, .icon-btn:active { transform: scale(0.98); }
 
 .point-actions {
@@ -226,7 +258,7 @@ h1 {
   border: 1px solid rgba(255,255,255,0.12);
   padding: 7px;
   display: grid;
-  grid-template-rows: 30px minmax(0, 1fr) 50px 46px 48px;
+  grid-template-rows: 24px minmax(0, 0.72fr) 58px 64px;
   gap: 6px;
   text-align: center;
   overflow: hidden;
@@ -246,12 +278,12 @@ h1 {
 .alert-banner {
   display: grid;
   place-items: center;
-  border-radius: 17px;
+  border-radius: 14px;
   background: linear-gradient(180deg, rgba(255,209,102,0.16), rgba(255,209,102,0.04));
   border: 1px solid rgba(255,209,102,0.18);
   color: var(--gold);
   font-family: Anton, Impact, sans-serif;
-  font-size: clamp(1.15rem, 6dvh, 2.05rem);
+  font-size: clamp(1rem, 4.6dvh, 1.65rem);
   text-transform: uppercase;
   line-height: 0.95;
   padding: 5px;
@@ -259,7 +291,7 @@ h1 {
   white-space: normal;
 }
 .alert-banner.hot { animation: pulseGlow 0.9s ease-in-out infinite alternate; }
-.set-box, .race-box {
+.set-box {
   border-radius: 16px;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.12);
@@ -268,14 +300,14 @@ h1 {
   align-content: center;
   min-width: 0;
 }
-.set-box span, .race-box span {
+.set-box span {
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: clamp(0.48rem, 1.9dvh, 0.62rem);
   font-weight: 900;
 }
-.set-box strong, .race-box strong { font-size: clamp(1.15rem, 5.6dvh, 1.7rem); line-height: 1; }
+.set-box strong { font-size: clamp(1.15rem, 5.6dvh, 1.7rem); line-height: 1; }
 .control-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -286,11 +318,11 @@ h1 {
   border-radius: 13px;
   background: var(--panel-strong);
   border: 1px solid rgba(255,255,255,0.13);
-  font-size: clamp(0.46rem, 1.9dvh, 0.62rem);
+  font-size: clamp(0.62rem, 2.6dvh, 0.9rem);
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.01em;
-  padding: 2px;
+  padding: 4px;
 }
 #newMatchBtn { color: var(--danger); }
 
@@ -392,7 +424,7 @@ dialog::backdrop { background: rgba(0,0,0,0.62); backdrop-filter: blur(7px); }
 .settings-head h2 { margin: 0; font-size: 1.3rem; }
 .x-btn { width: 36px; height: 36px; border-radius: 12px; background: rgba(255,255,255,0.1); font-size: 1.4rem; }
 .settings-card label { display: grid; gap: 6px; margin-bottom: 12px; color: var(--muted); font-size: 0.8rem; font-weight: 800; }
-.settings-card input {
+.settings-card input, .settings-card select {
   width: 100%;
   border: 1px solid rgba(255,255,255,0.14);
   border-radius: 14px;
@@ -401,6 +433,7 @@ dialog::backdrop { background: rgba(0,0,0,0.62); backdrop-filter: blur(7px); }
   color: white;
   outline: 0;
 }
+.settings-card select { appearance: none; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .swatch-section { margin: 8px 0 14px; }
 .swatch-section h3 { margin: 0 0 8px; color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; }
@@ -433,6 +466,14 @@ dialog::backdrop { background: rgba(0,0,0,0.62); backdrop-filter: blur(7px); }
 @keyframes trophySpin {
   0% { transform: rotateY(0deg); }
   100% { transform: rotateY(360deg); }
+}
+@keyframes setWinnerPulse {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.25) rotate(-8deg); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.08) rotate(-6deg); }
+  28% { opacity: 1; transform: translate(-50%, -50%) scale(0.94) rotate(-6deg); }
+  44% { opacity: 1; transform: translate(-50%, -50%) scale(1.12) rotate(-6deg); }
+  64% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-6deg); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.22) rotate(-6deg); }
 }
 
 @media (orientation: portrait) {
@@ -475,21 +516,21 @@ dialog::backdrop { background: rgba(0,0,0,0.62); backdrop-filter: blur(7px); }
   .sets-card span { font-size: 0.48rem; }
   .sets-card strong { font-size: 1.1rem; }
   .set-dot { width: 10px; height: 10px; border-width: 2px; }
-  .center-panel { border-radius: 16px; padding: 6px; grid-template-rows: 26px minmax(0, 1fr) 42px 38px 40px; gap: 5px; }
+  .center-panel { border-radius: 16px; padding: 6px; grid-template-rows: 22px minmax(0, 0.68fr) 48px 54px; gap: 5px; }
   .match-pill { font-size: 0.46rem; }
   .alert-banner { border-radius: 13px; font-size: clamp(1rem, 5.4dvh, 1.55rem); }
-  .set-box, .race-box { border-radius: 13px; }
-  .set-box span, .race-box span { font-size: 0.45rem; }
-  .set-box strong, .race-box strong { font-size: 1.08rem; }
+  .set-box { border-radius: 13px; }
+  .set-box span { font-size: 0.45rem; }
+  .set-box strong { font-size: 1.08rem; }
   .control-grid { gap: 4px; }
-  .control-grid button { border-radius: 10px; font-size: 0.43rem; letter-spacing: 0; }
+  .control-grid button { border-radius: 10px; font-size: 0.58rem; letter-spacing: 0; }
 }
 
 @media (max-width: 620px) and (orientation: landscape) {
   .scoreboard { grid-template-columns: minmax(0, 1fr) 82px minmax(0, 1fr); }
   .center-panel { padding: 5px; }
   .alert-banner { font-size: 1rem; }
-  .control-grid button { font-size: 0.38rem; }
+  .control-grid button { font-size: 0.5rem; }
 }
 
 .live-status {
@@ -540,13 +581,13 @@ dialog::backdrop { background: rgba(0,0,0,0.62); backdrop-filter: blur(7px); }
   grid-template-rows: clamp(38px, 11dvh, 52px) minmax(0, 1fr) 0 clamp(42px, 12dvh, 54px);
 }
 .viewer-mode .center-panel {
-  grid-template-rows: 30px minmax(0, 1fr) 50px 46px 0;
+  grid-template-rows: 24px minmax(0, 0.72fr) 58px 0;
 }
 .viewer-mode .control-grid { display: none; }
 
 @media (max-width: 760px) and (orientation: landscape), (max-height: 380px) and (orientation: landscape) {
   .live-status { display: none; }
-  .control-grid button { font-size: 0.39rem; }
+  .control-grid button { font-size: 0.54rem; }
   .viewer-mode .team-panel { grid-template-rows: 36px minmax(0,1fr) 0 40px; }
-  .viewer-mode .center-panel { grid-template-rows: 26px minmax(0,1fr) 42px 38px 0; }
+  .viewer-mode .center-panel { grid-template-rows: 22px minmax(0,0.68fr) 48px 0; }
 }

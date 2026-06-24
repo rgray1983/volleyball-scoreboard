@@ -22,6 +22,8 @@ const state = {
   setNumber: 1,
   winBy: 2,
   setsToWin: 2,
+  matchFormat: "club",
+  matchSets: 3,
   history: [],
   lastAlert: "",
   homeColor: "#d62828",
@@ -30,6 +32,8 @@ const state = {
   homeName: "Team 1",
   awayName: "Team 2",
   winner: "",
+  setFlashTeam: "",
+  setFlashId: 0,
   confettiRunning: false,
   confettiAnimation: null
 };
@@ -57,8 +61,12 @@ const els = {
   awayName: $("awayName"),
   homeNameSetting: $("homeNameSetting"),
   awayNameSetting: $("awayNameSetting"),
+  matchFormatSetting: $("matchFormatSetting"),
+  matchPill: $("matchPill"),
   homeScoreBtn: $("homeScoreBtn"),
   awayScoreBtn: $("awayScoreBtn"),
+  homeSetWinBadge: $("homeSetWinBadge"),
+  awaySetWinBadge: $("awaySetWinBadge"),
   homeSets: $("homeSets"),
   awaySets: $("awaySets"),
   homeSetDots: $("homeSetDots"),
@@ -115,17 +123,25 @@ function publicState() {
     setNumber: state.setNumber,
     winBy: state.winBy,
     setsToWin: state.setsToWin,
+    matchFormat: state.matchFormat,
+    matchSets: state.matchSets,
     lastAlert: state.lastAlert,
     homeColor: state.homeColor,
     awayColor: state.awayColor,
     matchTitle: state.matchTitle,
     homeName: state.homeName,
     awayName: state.awayName,
-    winner: state.winner
+    winner: state.winner,
+    setFlashTeam: state.setFlashTeam,
+    setFlashId: state.setFlashId
   };
 }
 
 function applyState(next) {
+  const incomingFlashId = Number(next.setFlashId ?? 0);
+  const incomingFlashTeam = next.setFlashTeam || "";
+  const shouldFlashSetWinner = incomingFlashId && incomingFlashId !== state.setFlashId;
+
   Object.assign(state, {
     homeScore: Number(next.homeScore ?? 0),
     awayScore: Number(next.awayScore ?? 0),
@@ -134,17 +150,22 @@ function applyState(next) {
     setNumber: Number(next.setNumber ?? 1),
     winBy: Number(next.winBy ?? 2),
     setsToWin: Number(next.setsToWin ?? 2),
+    matchFormat: next.matchFormat || (Number(next.setsToWin ?? 2) === 3 ? "highschool" : "club"),
+    matchSets: Number(next.matchSets ?? (Number(next.setsToWin ?? 2) === 3 ? 5 : 3)),
     lastAlert: next.lastAlert ?? "",
     homeColor: next.homeColor || "#d62828",
     awayColor: next.awayColor || "#1565c0",
     matchTitle: next.matchTitle || "Game Night",
     homeName: next.homeName || "Team 1",
     awayName: next.awayName || "Team 2",
-    winner: next.winner || ""
+    winner: next.winner || "",
+    setFlashTeam: incomingFlashTeam,
+    setFlashId: incomingFlashId
   });
   setTeamColor("home", state.homeColor, false);
   setTeamColor("away", state.awayColor, false);
   render();
+  if (shouldFlashSetWinner) triggerSetWinBadge(incomingFlashTeam);
   if (state.winner) showWinner(state.winner, false);
   else hideWinner();
 }
@@ -254,7 +275,21 @@ function otherTeam(team) {
 }
 
 function pointsToWinForCurrentSet() {
-  return state.setNumber >= 3 ? 15 : 25;
+  return state.setNumber >= state.matchSets ? 15 : 25;
+}
+
+function matchLabel() {
+  return state.matchFormat === "highschool" ? "High School · Best 3 of 5" : "Club · Best 2 of 3";
+}
+
+function applyMatchFormat(format) {
+  state.matchFormat = format === "highschool" ? "highschool" : "club";
+  state.matchSets = state.matchFormat === "highschool" ? 5 : 3;
+  state.setsToWin = state.matchFormat === "highschool" ? 3 : 2;
+
+  if (state.setNumber > state.matchSets) state.setNumber = state.matchSets;
+  if (state.homeSets > state.setsToWin) state.homeSets = state.setsToWin;
+  if (state.awaySets > state.setsToWin) state.awaySets = state.setsToWin;
 }
 
 function snapshot() {
@@ -287,12 +322,14 @@ function render() {
   els.awayName.value = state.awayName;
   els.homeNameSetting.value = state.homeName;
   els.awayNameSetting.value = state.awayName;
+  els.matchFormatSetting.value = state.matchFormat;
+  els.matchPill.textContent = matchLabel();
   els.homeScoreBtn.textContent = state.homeScore;
   els.awayScoreBtn.textContent = state.awayScore;
   els.homeSets.textContent = state.homeSets;
   els.awaySets.textContent = state.awaySets;
   els.setNumber.textContent = state.setNumber;
-  els.raceTo.textContent = target;
+  if (els.raceTo) els.raceTo.textContent = target;
   els.homeInitial.textContent = teamName("home").charAt(0).toUpperCase();
   els.awayInitial.textContent = teamName("away").charAt(0).toUpperCase();
   renderSetDots(els.homeSetDots, state.homeSets);
@@ -311,7 +348,7 @@ function updateAlertBanner() {
   } else if (awayPoint) {
     els.alertBanner.textContent = state.awaySets === state.setsToWin - 1 ? "Match Point" : "Set Point";
   } else {
-    els.alertBanner.textContent = `Race to ${target}`;
+    els.alertBanner.textContent = `Race ${target}`;
   }
 }
 
@@ -349,6 +386,8 @@ function subtract(team) {
   setScore(team, scoreOf(team) - 1);
   state.lastAlert = "";
   state.winner = "";
+  state.setFlashTeam = "";
+  state.setFlashId = 0;
   render();
   queueRemoteUpdate();
 }
@@ -372,8 +411,11 @@ function checkMilestones(team) {
 
 function winSet(team) {
   state[`${team}Sets`] += 1;
+  state.setFlashTeam = team;
+  state.setFlashId = Date.now();
   const wonMatch = state[`${team}Sets`] >= state.setsToWin;
   render();
+  triggerSetWinBadge(team);
 
   if (wonMatch) {
     state.winner = team;
@@ -398,8 +440,8 @@ function winSet(team) {
 
 function newSet() {
   if (isViewer) return;
-  if (state.setNumber >= 3) {
-    toast("Best 2 of 3 only has three sets", true);
+  if (state.setNumber >= state.matchSets) {
+    toast(`${matchLabel()} only has ${state.matchSets} sets`, true);
     return;
   }
   snapshot();
@@ -425,6 +467,8 @@ function newMatch() {
   state.setNumber = 1;
   state.lastAlert = "";
   state.winner = "";
+  state.setFlashTeam = "";
+  state.setFlashId = 0;
   stopConfetti();
   hideWinner();
   render();
@@ -448,9 +492,29 @@ function undo() {
 
 function saveSettings() {
   if (isViewer) return;
+  const nextFormat = els.matchFormatSetting.value;
+  const formatChanged = nextFormat !== state.matchFormat;
+
   state.matchTitle = els.titleInput.value.trim() || "Game Night";
   state.homeName = els.homeNameSetting.value.trim() || "Team 1";
   state.awayName = els.awayNameSetting.value.trim() || "Team 2";
+
+  if (formatChanged && (state.homeScore || state.awayScore || state.homeSets || state.awaySets)) {
+    const ok = confirm("Changing match format will reset the current match. Continue?");
+    if (!ok) return;
+    state.homeScore = 0;
+    state.awayScore = 0;
+    state.homeSets = 0;
+    state.awaySets = 0;
+    state.setNumber = 1;
+    state.winner = "";
+    state.setFlashTeam = "";
+    state.setFlashId = 0;
+    hideWinner();
+    stopConfetti();
+  }
+
+  applyMatchFormat(nextFormat);
   state.lastAlert = "";
   render();
   queueRemoteUpdate();
@@ -462,6 +526,8 @@ function openSettings() {
   els.titleInput.value = state.matchTitle;
   els.homeNameSetting.value = state.homeName;
   els.awayNameSetting.value = state.awayName;
+  els.matchFormatSetting.value = state.matchFormat;
+  els.matchPill.textContent = matchLabel();
   els.settingsDialog.showModal();
 }
 
@@ -599,6 +665,16 @@ function startTimedConfetti(ms) {
   startTimedConfetti.timer = setTimeout(stopConfetti, ms);
 }
 
+function triggerSetWinBadge(team) {
+  const badge = team === "home" ? els.homeSetWinBadge : els.awaySetWinBadge;
+  if (!badge) return;
+  badge.classList.remove("show");
+  void badge.offsetWidth;
+  badge.classList.add("show");
+  clearTimeout(badge.hideTimer);
+  badge.hideTimer = setTimeout(() => badge.classList.remove("show"), 3000);
+}
+
 function showWinner(team, sync = false) {
   els.winnerText.textContent = `${teamName(team)} Wins!`;
   document.body.classList.add("celebrating");
@@ -671,6 +747,7 @@ async function boot() {
   wireEvents();
   setTeamColor("home", state.homeColor, false);
   setTeamColor("away", state.awayColor, false);
+  applyMatchFormat(state.matchFormat);
   render();
 
   if (initFirebase()) {

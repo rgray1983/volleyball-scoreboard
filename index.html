@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#070a12" />
-  <title>VolleyScore Live</title>
+  <title>ScoreFlow Live</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@500;700;800;900&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
     <header class="top-bar">
       <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings">⚙</button>
       <div class="title-wrap">
-        <div class="kicker">VolleyScore</div>
+        <div class="kicker">ScoreFlow</div>
         <h1 id="matchTitle">Game Night</h1>
         <div class="live-status" id="liveStatus">Offline Practice Mode</div>
       </div>
@@ -41,7 +41,10 @@
           <input id="homeName" class="team-name" value="Team 1" aria-label="Team 1 name" />
         </div>
 
-        <button id="homeScoreBtn" class="score-btn" type="button" aria-label="Add point to Team 1">0</button>
+        <div class="score-wrap">
+          <button id="homeScoreBtn" class="score-btn" type="button" aria-label="Add point to Team 1">0</button>
+          <div class="set-win-badge" id="homeSetWinBadge">Winner!</div>
+        </div>
 
         <div class="point-actions">
           <button id="homePlus" class="point-btn plus" type="button">+1</button>
@@ -56,15 +59,11 @@
       </section>
 
       <section class="center-panel">
-        <div class="match-pill">Best 2 of 3</div>
+        <div class="match-pill" id="matchPill">Club · Best 2 of 3</div>
         <div class="alert-banner" id="alertBanner">Race to 25</div>
         <div class="set-box">
           <span>Set</span>
           <strong id="setNumber">1</strong>
-        </div>
-        <div class="race-box">
-          <span>Race To</span>
-          <strong id="raceTo">25</strong>
         </div>
         <div class="control-grid">
           <button id="undoBtn" type="button">Undo</button>
@@ -84,7 +83,10 @@
           <input id="awayName" class="team-name" value="Team 2" aria-label="Team 2 name" />
         </div>
 
-        <button id="awayScoreBtn" class="score-btn" type="button" aria-label="Add point to Visitor">0</button>
+        <div class="score-wrap">
+          <button id="awayScoreBtn" class="score-btn" type="button" aria-label="Add point to Visitor">0</button>
+          <div class="set-win-badge" id="awaySetWinBadge">Winner!</div>
+        </div>
 
         <div class="point-actions">
           <button id="awayPlus" class="point-btn plus" type="button">+1</button>
@@ -143,6 +145,14 @@
         <input id="titleInput" value="Game Night" />
       </label>
 
+      <label>
+        Match format
+        <select id="matchFormatSetting">
+          <option value="club">Club — Best 2 of 3</option>
+          <option value="highschool">High School — Best 3 of 5</option>
+        </select>
+      </label>
+
       <div class="two-col">
         <label>
           Home team
@@ -164,7 +174,7 @@
         <div class="swatches" id="awaySwatches"></div>
       </div>
 
-      <p class="hint">Best 2 out of 3. Sets 1–2 race to 25. Set 3 races to 15. Win by 2.</p>
+      <p class="hint">Club: best 2 of 3. High School: best 3 of 5. Final set races to 15. Win by 2.</p>
 
       <div class="dialog-actions">
         <button id="saveSettingsBtn" value="default" type="submit">Save Setup</button>
