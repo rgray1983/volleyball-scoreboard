@@ -610,3 +610,221 @@ body.setup-active .rotate-message {
     width: 100%;
   }
 }
+
+/* ScoreFlow polish update: cleaner header, wider center controls, and portrait setup fit */
+.top-bar {
+  grid-template-columns: 38px minmax(150px, 1fr) minmax(120px, auto) 38px;
+  gap: 10px;
+}
+
+.brand-wrap {
+  text-align: center;
+  min-width: 0;
+  justify-self: center;
+}
+
+.match-title-left {
+  margin: 0;
+  justify-self: start;
+  align-self: center;
+  max-width: 100%;
+  color: var(--text);
+  font-size: clamp(1.1rem, 3.4vw, 1.7rem);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scoreboard {
+  grid-template-columns: minmax(0, 1fr) clamp(112px, 16vw, 144px) minmax(0, 1fr);
+}
+
+.control-grid button {
+  line-height: 1.06;
+  display: grid;
+  place-items: center;
+  overflow-wrap: anywhere;
+}
+
+.settings-card input,
+.settings-card select,
+.team-name {
+  font-size: max(16px, 1rem);
+}
+
+.settings-card input:focus,
+.settings-card select:focus,
+.team-name:focus {
+  border-color: color-mix(in srgb, var(--gold) 70%, white 10%);
+  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.16);
+}
+
+@media (max-width: 760px) and (orientation: landscape), (max-height: 380px) and (orientation: landscape) {
+  .app-shell {
+    grid-template-rows: 40px minmax(0,1fr);
+    gap: 7px;
+  }
+
+  .top-bar {
+    grid-template-columns: 34px minmax(122px, 1fr) minmax(112px, auto) 34px;
+    gap: 8px;
+  }
+
+  .match-title-left {
+    font-size: clamp(1rem, 4.6dvh, 1.45rem);
+  }
+
+  .kicker {
+    font-size: 0.6rem;
+  }
+
+  .scoreboard {
+    grid-template-columns: minmax(0, 1fr) 112px minmax(0, 1fr);
+  }
+
+  .center-panel {
+    grid-template-rows: 22px minmax(0, 0.45fr) 42px minmax(82px, 1fr);
+  }
+
+  .control-grid button {
+    font-size: 0.56rem;
+    line-height: 1.04;
+    padding: 4px 2px;
+  }
+}
+
+@media (max-width: 620px) and (orientation: landscape) {
+  .scoreboard {
+    grid-template-columns: minmax(0, 1fr) 104px minmax(0, 1fr);
+  }
+
+  .control-grid button {
+    font-size: 0.5rem;
+  }
+}
+
+@media (orientation: portrait) {
+  body.setup-active {
+    overflow: hidden;
+  }
+
+  body.setup-active .app-shell {
+    filter: none;
+    transform: none;
+  }
+
+  body.setup-active dialog[open] {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: calc(env(safe-area-inset-top) + 10px) 12px calc(env(safe-area-inset-bottom) + 10px);
+    display: grid;
+    place-items: center;
+  }
+
+  body.setup-active dialog[open]::backdrop {
+    background: rgba(0,0,0,0.54);
+    backdrop-filter: blur(6px);
+  }
+
+  body.setup-active .settings-card {
+    width: min(100%, 430px);
+    max-width: 430px;
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);
+    overflow: hidden;
+    border-radius: 22px;
+    padding: 14px;
+  }
+
+  body.setup-active .settings-head {
+    margin-bottom: 8px;
+  }
+
+  body.setup-active .settings-head h2 {
+    font-size: 1.45rem;
+  }
+
+  body.setup-active .x-btn {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+  }
+
+  body.setup-active .settings-card label {
+    gap: 4px;
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+  }
+
+  body.setup-active .settings-card input,
+  body.setup-active .settings-card select {
+    min-height: 46px;
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+
+  body.setup-active .two-col {
+    gap: 8px;
+  }
+
+  body.setup-active .swatch-section {
+    margin: 6px 0 9px;
+  }
+
+  body.setup-active .swatch-section h3 {
+    margin-bottom: 6px;
+    font-size: 0.78rem;
+  }
+
+  body.setup-active .swatches {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  body.setup-active .swatch {
+    height: 34px;
+    border-radius: 12px;
+  }
+
+  body.setup-active .hint {
+    margin: 4px 0 10px;
+    font-size: 0.74rem;
+    line-height: 1.25;
+  }
+
+  body.setup-active .dialog-actions button {
+    min-height: 52px;
+    padding: 10px 14px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-height: 720px) and (orientation: portrait) {
+  body.setup-active .settings-card {
+    padding: 12px;
+  }
+
+  body.setup-active .settings-head h2 {
+    font-size: 1.25rem;
+  }
+
+  body.setup-active .settings-card input,
+  body.setup-active .settings-card select {
+    min-height: 42px;
+    padding: 8px 10px;
+  }
+
+  body.setup-active .swatch {
+    height: 30px;
+  }
+
+  body.setup-active .dialog-actions button {
+    min-height: 46px;
+  }
+}

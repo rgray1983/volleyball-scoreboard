@@ -92,6 +92,13 @@ const els = {
   firebaseNote: $("firebaseNote")
 };
 
+
+function selectExistingText(event) {
+  const input = event.currentTarget;
+  if (!input || typeof input.select !== "function") return;
+  requestAnimationFrame(() => input.select());
+}
+
 let db = null;
 let liveGameId = GAME_ID_FROM_URL || "";
 let unsubscribeLive = null;
@@ -335,7 +342,7 @@ function renderSetDots(container, won) {
 
 function render() {
   const target = pointsToWinForCurrentSet();
-  els.matchTitle.textContent = state.matchTitle;
+  els.matchTitle.textContent = state.matchTitle.toUpperCase();
   els.titleInput.value = state.matchTitle;
   els.homeName.value = state.homeName;
   els.awayName.value = state.awayName;
@@ -763,6 +770,10 @@ function wireEvents() {
   $("settingsBtn").addEventListener("click", openSettings);
   $("fullscreenBtn").addEventListener("click", toggleFullscreen);
   $("saveSettingsBtn").addEventListener("click", saveSettings);
+  [els.titleInput, els.homeNameSetting, els.awayNameSetting, els.homeName, els.awayName].forEach((input) => {
+    input?.addEventListener("focus", selectExistingText);
+    input?.addEventListener("click", selectExistingText);
+  });
   els.settingsDialog.addEventListener("close", () => {
     if (!initialSetupActive) document.body.classList.remove("setup-active");
   });
