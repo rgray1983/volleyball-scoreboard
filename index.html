@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#070a12" />
+  <meta name="description" content="ScoreFlow live volleyball scoreboard with real-time viewer links." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="ScoreFlow" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" sizes="180x180" href="app-icon-180.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="app-icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="app-icon-512.png" />
   <title>ScoreFlow Live</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,6 +19,22 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="splash-screen" id="splashScreen" aria-hidden="true">
+    <div class="splash-logo-stage">
+      <img class="splash-logo-img" src="splash-logo.png" alt="ScoreFlow" />
+      <div class="splash-volleyball" aria-hidden="true">
+        <span class="volley-curve curve-one"></span>
+        <span class="volley-curve curve-two"></span>
+        <span class="volley-curve curve-three"></span>
+      </div>
+      <div class="splash-shadow"></div>
+    </div>
+    <div class="splash-logo">
+      <span>ScoreFlow</span>
+      <small>Live scoring made simple</small>
+    </div>
+  </div>
+
   <div class="rotate-message">
     <div class="rotate-card">
       <div class="rotate-icon">↻</div>

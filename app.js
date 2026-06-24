@@ -106,6 +106,25 @@ let applyingRemote = false;
 let liveReady = false;
 let remoteTimer = null;
 let initialSetupActive = false;
+let splashClosed = false;
+
+function hideSplash() {
+  if (splashClosed) return;
+  splashClosed = true;
+  document.body.classList.add("splash-done");
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  if (!["https:", "http:"].includes(window.location.protocol)) return;
+
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch((error) => {
+      console.warn("ScoreFlow service worker registration failed:", error);
+    });
+  });
+}
+
 
 function hasFirebaseConfig() {
   return Boolean(firebaseConfig?.apiKey && firebaseConfig?.projectId && firebaseConfig?.appId);
@@ -820,7 +839,12 @@ async function boot() {
     els.liveStatus.textContent = "Offline Practice Mode";
   }
   applyViewerMode();
-  requestAnimationFrame(beginInitialPortraitSetup);
+  registerServiceWorker();
+
+  window.setTimeout(() => {
+    hideSplash();
+    requestAnimationFrame(beginInitialPortraitSetup);
+  }, 1250);
 }
 
 boot();
