@@ -1,4 +1,4 @@
-const SCORE_FLOW_CACHE = "scoreflow-v1.0.2";
+const SCORE_FLOW_CACHE = "scoreflow-v1.0.3";
 
 const CORE_ASSETS = [
   "./",
@@ -13,7 +13,8 @@ const STATIC_ASSETS = [
   "./app-icon-180.png",
   "./app-icon-192.png",
   "./app-icon-512.png",
-  "./splash-logo.png"
+  "./splash-logo.png",
+  "./volleyball.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -91,6 +92,6 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (isStaticBrandingFile(requestUrl)) {
-    event.respondWith(cacheFirst(event.request));
+    event.respondWith(networkFirst(event.request));
   }
 });
