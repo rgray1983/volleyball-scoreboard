@@ -98,6 +98,7 @@ let unsubscribeLive = null;
 let applyingRemote = false;
 let liveReady = false;
 let remoteTimer = null;
+let initialSetupActive = false;
 
 function hasFirebaseConfig() {
   return Boolean(firebaseConfig?.apiKey && firebaseConfig?.projectId && firebaseConfig?.appId);
@@ -113,6 +114,23 @@ function initFirebase() {
     console.error(error);
     return false;
   }
+}
+
+function isPortraitOrientation() {
+  return window.matchMedia("(orientation: portrait)").matches;
+}
+
+function beginInitialPortraitSetup() {
+  if (isViewer || liveGameId || !isPortraitOrientation()) return;
+  initialSetupActive = true;
+  document.body.classList.add("setup-active");
+  openSettings();
+}
+
+function endInitialPortraitSetup() {
+  if (!initialSetupActive) return;
+  initialSetupActive = false;
+  document.body.classList.remove("setup-active");
 }
 
 function publicState() {
@@ -518,12 +536,14 @@ function saveSettings() {
   applyMatchFormat(nextFormat);
   state.lastAlert = "";
   render();
+  endInitialPortraitSetup();
   queueRemoteUpdate();
   toast("Setup saved");
 }
 
 function openSettings() {
   if (isViewer) return;
+  if (isPortraitOrientation()) document.body.classList.add("setup-active");
   els.titleInput.value = state.matchTitle;
   els.homeNameSetting.value = state.homeName;
   els.awayNameSetting.value = state.awayName;
@@ -743,6 +763,9 @@ function wireEvents() {
   $("settingsBtn").addEventListener("click", openSettings);
   $("fullscreenBtn").addEventListener("click", toggleFullscreen);
   $("saveSettingsBtn").addEventListener("click", saveSettings);
+  els.settingsDialog.addEventListener("close", () => {
+    if (!initialSetupActive) document.body.classList.remove("setup-active");
+  });
   $("createLiveBtn").addEventListener("click", createLiveGame);
   $("copyLinkBtn").addEventListener("click", copyViewerLink);
   els.nativeShareBtn?.addEventListener("click", shareViewerLink);
@@ -786,6 +809,7 @@ async function boot() {
     els.liveStatus.textContent = "Offline Practice Mode";
   }
   applyViewerMode();
+  requestAnimationFrame(beginInitialPortraitSetup);
 }
 
 boot();

@@ -594,3 +594,19 @@ dialog::backdrop { background: rgba(0,0,0,0.62); backdrop-filter: blur(7px); }
   .viewer-mode .team-panel { grid-template-rows: 36px minmax(0,1fr) 0 40px; }
   .viewer-mode .center-panel { grid-template-rows: 22px minmax(0,0.68fr) 48px 0; }
 }
+
+
+body.setup-active .rotate-message {
+  display: none !important;
+}
+
+@media (orientation: portrait) {
+  body.setup-active .app-shell {
+    filter: none;
+    transform: none;
+  }
+
+  body.setup-active dialog[open] {
+    width: 100%;
+  }
+}
