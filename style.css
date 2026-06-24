@@ -859,6 +859,7 @@ body.splash-done .splash-screen {
   display: grid;
   place-items: center;
   animation: splashLogoIn 0.58s cubic-bezier(.17,.89,.32,1.25) both;
+  transform: scale(1.5);
 }
 
 .splash-logo-img {
@@ -936,6 +937,7 @@ body.splash-done .splash-screen {
   gap: 5px;
   text-align: center;
   animation: splashTextIn 0.52s ease 0.16s both;
+  transform: scale(1.5);
 }
 
 .splash-logo span {
